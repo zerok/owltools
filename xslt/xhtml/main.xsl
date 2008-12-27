@@ -104,7 +104,8 @@
            <xsl:choose>
                <xsl:when test="starts-with($super,'#')">
                    <xsl:apply-templates mode="toc"
-                       select="$classes[@rdf:about=$super]" />
+                       select="$classes[@rdf:about=$super or
+                               @rdf:ID=substring($super,2)]" />
                </xsl:when>
                <xsl:otherwise>
                    <li><a href="{$super}">
@@ -161,8 +162,7 @@
             <div id="toc_classes" class="toc inline">
                 <h3><xsl:value-of select="count($classes)" /> classes:</h3>
                 <ul class="toc">
-                    <xsl:apply-templates select="$classes"
-                         mode="toc" />
+                    <xsl:apply-templates select="$classes" mode="toc" />
                 </ul>
             </div>
             <xsl:if test="boolean(./owl:ObjectProperty)">
@@ -211,7 +211,7 @@
         </div>
     </xsl:template>
     <!--=== CLASS =========================================================-->
-    <xsl:template match="owl:Class[starts-with(@rdf:about,'#')]">
+    <xsl:template match="owl:Class" mode="full">
         <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
         <xsl:variable name="range" select="$objectProperties[
             .//rdfs:range[@rdf:resource=concat('#',$localname)]]" />
@@ -265,7 +265,7 @@
         </div>
     </xsl:template>
     <!--=== DATATYPE PROPERTY =============================================-->
-    <xsl:template match="owl:DatatypeProperty[starts-with(@rdf:about,'#')]">
+    <xsl:template match="owl:DatatypeProperty" mode="full">
         <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
         <div class="datatypeproperty" id="{$localname}">
             <h3><xsl:value-of select="$localname" /></h3>
@@ -276,7 +276,7 @@
         </div>
     </xsl:template>
     <!--=== OBJECT PROPERTY ===============================================-->
-    <xsl:template match="owl:ObjectProperty[starts-with(@rdf:about,'#')]">
+    <xsl:template match="owl:ObjectProperty" mode="full">
         <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
         <div class="datatypeproperty" id="{$localname}">
             <h3><xsl:value-of select="$localname" /></h3>
@@ -287,23 +287,17 @@
         </div>
     </xsl:template>
     <!--=== TOC ENTRIES ===================================================-->
-    <xsl:template mode="toc"
-        match="owl:Class[starts-with(@rdf:about, '#')]">
-        <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <li>
-            <a href="#{$localname}"><xsl:value-of select="$localname" /></a>
-        </li>
-    </xsl:template>
-    <xsl:template mode="toc"
-        match="owl:ObjectProperty[starts-with(@rdf:about, '#')]">
-        <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <li>
-            <a href="#{$localname}"><xsl:value-of select="$localname" /></a>
-        </li>
-    </xsl:template>
-    <xsl:template mode="toc"
-        match="owl:DatatypeProperty[starts-with(@rdf:about, '#')]">
-        <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
+    <xsl:template match="*" mode="toc">
+        <xsl:variable name="localname">
+            <xsl:choose>
+                <xsl:when test="@rdf:ID">
+                    <xsl:value-of select="@rdf:ID" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="substring(./@rdf:about, 2)" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
         <li>
             <a href="#{$localname}"><xsl:value-of select="$localname" /></a>
         </li>
@@ -313,7 +307,6 @@
         <xsl:value-of select="text()" />
     </xsl:template>
     
-
     <xsl:template match="rdfs:label">
         <xsl:choose>
             <xsl:when test="boolean(./@xml:lang)">
