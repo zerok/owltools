@@ -267,7 +267,7 @@
     <!--=== DATATYPE PROPERTY =============================================-->
     <xsl:template match="owl:DatatypeProperty[starts-with(@rdf:about,'#')]">
         <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <div class="datatypeproperty">
+        <div class="datatypeproperty" id="{$localname}">
             <h3><xsl:value-of select="$localname" /></h3>
             <div class="info">
                 <xsl:call-template name="basicInformation" />
@@ -278,7 +278,7 @@
     <!--=== OBJECT PROPERTY ===============================================-->
     <xsl:template match="owl:ObjectProperty[starts-with(@rdf:about,'#')]">
         <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <div class="datatypeproperty">
+        <div class="datatypeproperty" id="{$localname}">
             <h3><xsl:value-of select="$localname" /></h3>
             <div class="info">
                 <xsl:call-template name="basicInformation" />
