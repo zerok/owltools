@@ -45,6 +45,7 @@
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns="http://www.w3.org/TR/xhtml1/strict">
+    <xsl:output indent="yes" />
     
     <xsl:param name="stylesheet" />
     <xsl:variable name="namespace" select="/rdf:RDF/@xml:base"/>
@@ -65,7 +66,9 @@
     <xsl:template match="/">
         <html>
             <head>
-                <title><xsl:value-of select="$title" /></title>
+                <xsl:if test="string-length($title) &gt; 0">
+                    <title><xsl:value-of select="$title" /></title>
+                </xsl:if>
                 <style type="text/css">
                     cite {font-style:italic}
                     ul, dd {margin:0; padding:0;}
@@ -213,7 +216,9 @@
     <xsl:template match="rdfs:isDefinedBy[@rdf:resource='']" mode="full" />
     <xsl:template match="@*" mode="full">
         <dl>
-            <xsl:attribute name="class" select="name()" />
+            <xsl:attribute name="class">
+                <xsl:value-of select="name()" />
+            </xsl:attribute>
             <dt><xsl:value-of select="name()" /></dt>
             <dd><xsl:value-of select="." /></dd>
         </dl>
