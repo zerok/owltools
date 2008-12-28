@@ -45,6 +45,7 @@
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns="http://www.w3.org/TR/xhtml1/strict">
+    
     <xsl:param name="stylesheet" />
     <xsl:variable name="namespace" select="/rdf:RDF/@xml:base"/>
     <xsl:variable name="title">
@@ -59,61 +60,7 @@
     <xsl:variable name="classes"
         select="/rdf:RDF/owl:Class[&local-cond;]"
         />
-    <!-- === COMMON TEMPLATES =============================================-->
-    <xsl:template name="basicInformation">
-        <xsl:if test="boolean(./rdfs:label)">
-            <dl>
-                <dt>Label:</dt>
-                <xsl:apply-templates select="./rdfs:label" />
-            </dl>
-        </xsl:if>
-        <xsl:if test="boolean(rdfs:comment)">
-            <dl>
-                <dt>Description:</dt>
-                <xsl:apply-templates 
-                    select="./rdfs:comment" />
-            </dl>
-        </xsl:if>
-    </xsl:template>
-    <xsl:template name="domainAndRange">
-        <xsl:variable name="domain" select="./rdfs:domain/@rdf:resource" />
-        <xsl:variable name="range" select="./rdfs:range/@rdf:resource" />
-        <xsl:if test="boolean(count($domain))">
-            <dl class="domain">
-                <dt>Domain:</dt>
-                <dd><ul>
-                    <xsl:for-each select="$domain">
-                        <xsl:call-template name="classRef" />
-                    </xsl:for-each>
-                </ul></dd>
-            </dl>
-        </xsl:if>
-        <xsl:if test="boolean(count($range))">
-            <dl class="range">
-                <dt>Range:</dt>
-                <dd><ul>
-                    <xsl:for-each select="$range">
-                        <xsl:call-template name="classRef" />
-                    </xsl:for-each>
-                </ul></dd>
-            </dl>
-        </xsl:if>
-    </xsl:template>
-    <xsl:template name="classRef">
-           <xsl:variable name="super" select="." />
-           <xsl:choose>
-               <xsl:when test="starts-with($super,'#')">
-                   <xsl:apply-templates mode="toc"
-                       select="$classes[@rdf:about=$super or
-                               @rdf:ID=substring($super,2)]" />
-               </xsl:when>
-               <xsl:otherwise>
-                   <li><a href="{$super}">
-                       <xsl:value-of select="." />
-                   </a></li>
-               </xsl:otherwise>
-           </xsl:choose>
-    </xsl:template>
+        
     <!-- === BASE =========================================================-->
     <xsl:template match="/">
         <html>
@@ -137,8 +84,8 @@
                     dl {
                         overflow:hidden; border-bottom: 1px dotted #AAA;
                         margin: 0; padding: 5px 0}
-                    dt {font-weight: bold; float: left; width: 25%}
-                    dd {float:right; width: 75%}
+                    dt {font-weight: bold; float: left; width: 35%}
+                    dd {float:right; width: 65%}
                     h2 {
                         background-color: #99C5FF; padding: 3px}
                     h3 {
@@ -188,9 +135,9 @@
         </div>
         <div id="details">
             <h2 class="title">Details</h2>
-            <xsl:apply-templates select="./owl:Class" />
-            <xsl:apply-templates select="./owl:ObjectProperty" />
-            <xsl:apply-templates select="./owl:DatatypeProperty" />
+            <xsl:apply-templates select="$classes" mode="details" />
+            <xsl:apply-templates select="$objectProperties" mode="details" />
+            <xsl:apply-templates select="$datatypeProperties" mode="details" />
         </div>
         
     </xsl:template>
@@ -210,81 +157,97 @@
             <p class="comment"><xsl:value-of select="./rdfs:comment" /></p>
         </div>
     </xsl:template>
-    <!--=== CLASS =========================================================-->
-    <xsl:template match="owl:Class" mode="full">
-        <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <xsl:variable name="range" select="$objectProperties[
-            .//rdfs:range[@rdf:resource=concat('#',$localname)]]" />
-        <xsl:variable name="domain" select="$objectProperties[
-            .//rdfs:domain[@rdf:resource=concat('#',$localname)]]" />
+    
+    <!--Detailsmode templates =============================================-->
+    <xsl:template match="owl:Class" mode="details">
+        <xsl:variable name="localname">
+            <xsl:choose>
+                <xsl:when test="@rdf:ID">
+                    <xsl:value-of select="@rdf:ID" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="substring(./@rdf:about, 2)" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
         <xsl:variable name="subclasses" select="$classes[
             rdfs:subClassOf[@rdf:resource=concat('#',$localname)]]" />
-        <xsl:variable name="superclasses"
-            select="rdfs:subClassOf/@rdf:resource" />
-        <div class="class" id="{$localname}">
-            <h3 class="qname"><xsl:value-of select="$localname" /></h3>
-            <div class="information">
-                <xsl:call-template name="basicInformation" />
-                <xsl:if test="boolean($subclasses)">
-                    <dl>
-                        <dt>Subclasses:</dt>
-                        <dd><ul>
-                            <xsl:apply-templates mode="toc" 
-                                select="$subclasses" />
-                        </ul></dd>
-                    </dl>
-                </xsl:if>
-                <xsl:if test="boolean($superclasses)">
-                    <dl>
-                        <dt>Superclasses:</dt>
-                        <dd><ul>
-                            <xsl:for-each select="$superclasses">
-                                <xsl:call-template name="classRef" />
-                            </xsl:for-each>
-                        </ul></dd>
-                    </dl>
-                </xsl:if>
-                <xsl:if test="boolean($domain)">
-                    <dl>
-                        <dt>In domain of:</dt>
-                        <dd><ul>
-                            <xsl:apply-templates mode="toc" 
-                                select="$domain" />
-                        </ul></dd>
-                    </dl>
-                </xsl:if>
-                <xsl:if test="boolean($range)">
-                    <dl>
-                        <dt>In range of:</dt>
-                        <dd><ul>
-                            <xsl:apply-templates mode="toc" select="$range" />
-                        </ul></dd>
-                    </dl>
-                </xsl:if>
-            </div>
+        <div id="{$localname}">
+            <xsl:apply-templates select="@*" mode="full" />
+            <xsl:apply-templates select="*" mode="full" />
+            <xsl:if test="$subclasses">
+            <dl>
+                <dt>Subclasses:</dt>
+                <dd><ul>
+                    <xsl:apply-templates select="$subclasses" mode="toc" />
+                </ul></dd>
+            </dl>
+            </xsl:if>
         </div>
     </xsl:template>
-    <!--=== DATATYPE PROPERTY =============================================-->
-    <xsl:template match="owl:DatatypeProperty" mode="full">
-        <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <div class="datatypeproperty" id="{$localname}">
-            <h3><xsl:value-of select="$localname" /></h3>
-            <div class="info">
-                <xsl:call-template name="basicInformation" />
-                <xsl:call-template name="domainAndRange" />
-            </div>
+    <xsl:template match="*" mode="details">
+        <xsl:variable name="localname">
+            <xsl:choose>
+                <xsl:when test="@rdf:ID">
+                    <xsl:value-of select="@rdf:ID" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="substring(./@rdf:about, 2)" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        <div id="{$localname}">
+            <xsl:apply-templates select="@*" mode="full" />
+            <xsl:apply-templates select="*" mode="full" />
         </div>
     </xsl:template>
-    <!--=== OBJECT PROPERTY ===============================================-->
-    <xsl:template match="owl:ObjectProperty" mode="full">
-        <xsl:variable name="localname" select="substring(./@rdf:about, 2)" />
-        <div class="datatypeproperty" id="{$localname}">
-            <h3><xsl:value-of select="$localname" /></h3>
-            <div class="info">
-                <xsl:call-template name="basicInformation" />
-                <xsl:call-template name="domainAndRange" />
-            </div>
-        </div>
+    
+    <!-- Fullmode templates ===============================================-->
+    <xsl:template match="@rdf:about" mode="full">
+        <h3><xsl:value-of select="substring(.,2)" /></h3>
+    </xsl:template>
+    <xsl:template match="@rdf:ID" mode="full">
+        <h3><xsl:value-of select="." /></h3>
+    </xsl:template>
+    <xsl:template match="owl:unionOf" mode="full" />
+    <xsl:template match="rdfs:isDefinedBy[@rdf:resource='']" mode="full" />
+    <xsl:template match="@*" mode="full">
+        <dl>
+            <xsl:attribute name="class" select="name()" />
+            <dt><xsl:value-of select="name()" /></dt>
+            <dd><xsl:value-of select="." /></dd>
+        </dl>
+    </xsl:template>
+    
+    <!-- Shortmode templates ==============================================-->
+    <xsl:template match="@xml:lang|@rdf:datatype" mode="short" />
+    <xsl:template match="@rdf:resource" mode="short">
+        <a href="{.}"><xsl:value-of select="." /></a>
+    </xsl:template>
+    <xsl:template match="owl:hasValue" mode="short">
+        = <xsl:apply-templates />
+    </xsl:template>
+    <xsl:template match="owl:cardinality" mode="short">
+        |n| = <xsl:apply-templates />
+    </xsl:template>
+    <xsl:template match="owl:minCardinality" mode="short">
+        |n| &gt;= <xsl:apply-templates />
+    </xsl:template>
+    <xsl:template match="owl:maxCardinality" mode="short">
+        |n| &lt;= <xsl:apply-templates />
+    </xsl:template>
+    <xsl:template match="owl:unionOf" mode="short">
+        Union(<xsl:apply-templates mode="short" />)
+    </xsl:template>
+    <xsl:template match="owl:Class[not(@rdf:about) and not(@rdf:ID)]" 
+        mode="short">
+        <xsl:apply-templates mode="short" />
+    </xsl:template>
+    <xsl:template match="owl:onProperty" mode="short">
+        <xsl:apply-templates select="@*" mode="short" />
+    </xsl:template>
+    <xsl:template match="@rdf:about" mode="short">
+        <a href="{.}"><xsl:value-of select="." /></a>
     </xsl:template>
     <!--=== TOC ENTRIES ===================================================-->
     <xsl:template match="*" mode="toc">
@@ -302,40 +265,37 @@
             <a href="#{$localname}"><xsl:value-of select="$localname" /></a>
         </li>
     </xsl:template>
-    <!-- === CREATOR ======================================================-->
-    <xsl:template match="dc:creator">
-        <xsl:value-of select="text()" />
-    </xsl:template>
     
-    <xsl:template match="rdfs:label">
+    <!-- Generic templates ================================================-->
+    <xsl:template match="*" mode="full">
+        <dl>
         <xsl:choose>
             <xsl:when test="boolean(./@xml:lang)">
+                <dt><xsl:value-of select="name()"/> 
+                    (<xsl:value-of select="@xml:lang" />):</dt>
                 <dd>
                    <xsl:attribute name="xml:lang">
                        <xsl:value-of select="./@xml:lang" />
                    </xsl:attribute>
-                   <xsl:value-of select="./text()" />
+                   <xsl:apply-templates select="@*" mode="short" />
+                   <xsl:apply-templates select="*" mode="short" />
+                   <xsl:value-of select="text()" />
                 </dd>
             </xsl:when>
             <xsl:otherwise>
-                <dd><xsl:value-of select="./text()" /></dd>
+                <dt><xsl:value-of select="name()"/>:</dt>
+                <dd>
+                    <xsl:apply-templates select="@*" mode="short" />
+                    <xsl:apply-templates select="*" mode="short" />
+                    <xsl:value-of select="text()" />
+                </dd>
             </xsl:otherwise>
         </xsl:choose>
+        </dl>
     </xsl:template>
-    <xsl:template match="rdfs:comment">
-        <xsl:choose>
-            <xsl:when test="boolean(./@xml:lang)">
-                <dd xml:lang="{@xml:lang}">
-                    <p class="description">
-                        <xsl:value-of select="./text()" /></p>
-                </dd>
-            </xsl:when>
-            <xsl:otherwise>
-                <dd><p class="description">
-                    <xsl:value-of select="./text()" /></p>
-                </dd>
-            </xsl:otherwise>
-        </xsl:choose>
+    <xsl:template match="*" mode="short">
+        <xsl:apply-templates select="@*" mode="short" />
+        <xsl:apply-templates select=" *" mode="short" />
     </xsl:template>
     <xsl:template match="*"></xsl:template>
 </xsl:stylesheet>
