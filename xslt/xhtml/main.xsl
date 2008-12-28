@@ -35,17 +35,19 @@
     parameter: "stylesheet". Use this to pass a CSS file or URL
     to the XSLT.
 -->
-<!DOCTYPE xsl:stylesheet [
-    <!ENTITY local-cond "starts-with(@rdf:about, '#') or boolean(@rdf:ID)">
-]>
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:owl="http://www.w3.org/2002/07/owl#"
     xmlns:dc="http://purl.org/dc/elements/1.1/"
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-    xmlns="http://www.w3.org/TR/xhtml1/strict">
-    <xsl:output indent="yes" />
+    xmlns="http://www.w3.org/1999/xhtml"
+    exclude-result-prefixes="rdf rdfs dc owl"
+    >
+    <xsl:output indent="yes" method="html" 
+        doctype-public="-//W3C//DTD XHTML 1.0 Transitional//EN"
+        doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"
+        />
     
     <xsl:param name="stylesheet" />
     <xsl:variable name="namespace" select="/rdf:RDF/@xml:base"/>
@@ -53,13 +55,13 @@
         <xsl:value-of select="/rdf:RDF/owl:Ontology/rdfs:label" />
     </xsl:variable>
     <xsl:variable name="datatypeProperties"
-        select="/rdf:RDF/owl:DatatypeProperty[&local-cond;]" 
+        select="/rdf:RDF/owl:DatatypeProperty[starts-with(@rdf:about, '#') or boolean(@rdf:ID)]" 
         />
     <xsl:variable name="objectProperties"
-        select="/rdf:RDF/owl:ObjectProperty[&local-cond;]"
+        select="/rdf:RDF/owl:ObjectProperty[starts-with(@rdf:about, '#') or boolean(@rdf:ID)]"
         />
     <xsl:variable name="classes"
-        select="/rdf:RDF/owl:Class[&local-cond;]"
+        select="/rdf:RDF/owl:Class[starts-with(@rdf:about, '#') or boolean(@rdf:ID)]"
         />
         
     <!-- === BASE =========================================================-->
@@ -69,7 +71,7 @@
                 <xsl:if test="string-length($title) &gt; 0">
                     <title><xsl:value-of select="$title" /></title>
                 </xsl:if>
-                <style type="text/css">
+                <style type="text/css"><![CDATA[
                     cite {font-style:italic}
                     ul, dd {margin:0; padding:0;}
                     #page {
@@ -93,7 +95,7 @@
                         background-color: #99C5FF; padding: 3px}
                     h3 {
                         background-color: #D1E4FD; padding: 3px}
-                </style>
+                ]]></style>
                 <xsl:if test="$stylesheet">
                     <link rel="stylesheet" type="text/css"
                          href="{$stylesheet}" />
